@@ -1,1 +1,537 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airリザーブ予約者一覧抽出ツール</title>
+    <style>
+        body {
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+        .step {
+            margin: 25px 0;
+            padding: 20px;
+            border-left: 5px solid #007bff;
+            background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 0 8px 8px 0;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin: 10px 0;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        button {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(45deg, #d4edda, #c3e6cb);
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: linear-gradient(45deg, #f8d7da, #f5c6cb);
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .copy-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+            font-weight: 600;
+            color: #495057;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .instructions {
+            background: linear-gradient(45deg, #fff3cd, #ffeaa7);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border: 1px solid #ffeaa7;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .instructions ol li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .instructions code {
+            background-color: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .warning {
+            background: #ffe8e8;
+            border: 2px solid #ffcdd2;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .warning h4 {
+            color: #d32f2f;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Airリザーブ予約者一覧抽出ツール</h1>
+            <p>予約一覧テーブルから全項目を一括抽出してExcel用CSV形式で保存</p>
+        </div>
+        
+        <div class="warning">
+            <h4>⚠️ 重要な注意事項</h4>
+            <p>このツールは社内の予約管理業務効率化のために作成されました。個人情報の取り扱いには十分注意し、抽出したデータは業務目的以外で使用しないでください。</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 使用手順</h3>
+            <ol>
+                <li><strong>Airリザーブの管理画面</strong>で予約管理ページを開く</li>
+                <li><strong>予約一覧</strong>や<strong>予約検索</strong>画面にアクセス</li>
+                <li><strong>F12キー</strong>で開発者ツールを開く</li>
+                <li><strong>Elements（要素）タブ</strong>をクリック</li>
+                <li><strong>Ctrl+F</strong>で検索ボックスを開き、<code>tblReserveSearchResult</code>または<code>bookingSearchList</code>で検索</li>
+                <li>見つかった<strong>テーブル要素全体</strong>を右クリック</li>
+                <li><strong>「Copy」→「Copy outerHTML」</strong>を選択</li>
+                <li>下のテキストエリアに<strong>貼り付け</strong>して「抽出開始」ボタンをクリック</li>
+                <li><strong>完全版CSV保存</strong>ボタンで全項目入りCSVファイルをダウンロード</li>
+            </ol>
+        </div>
 
+        <div class="step">
+            <h3>1️⃣ HTMLソースを貼り付けてください</h3>
+            <textarea id="htmlInput" placeholder="ここにAirリザーブの管理画面からコピーしたHTMLを貼り付けてください...
+
+【推奨】予約一覧テーブル:
+<table class='tbl type-hAxisTtl' id='tblReserveSearchResult'>
+  <tbody id='bookingSearchList'>
+    <tr class='list_0'>
+      ...予約データ...
+    </tr>
+  </tbody>
+</table>
+
+【他の形式】
+カレンダー: <ul class='cellList is-data'>...
+詳細画面: <section class='staffBookingDetailBalloon'>..."></textarea>
+            <button onclick="extractNames()">🔍 抽出開始</button>
+            <button onclick="clearInput()">🗑️ クリア</button>
+        </div>
+
+        <div class="step">
+            <h3>2️⃣ 抽出結果</h3>
+            <div id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        function extractNames() {
+            const htmlInput = document.getElementById('htmlInput').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!htmlInput || htmlInput.trim() === '') {
+                resultDiv.innerHTML = '<div class="result error">❌ HTMLソースが入力されていません</div>';
+                return;
+            }
+            
+            console.log('入力されたHTML文字列の長さ:', htmlInput.length);
+            console.log('入力されたHTML（最初の200文字）:', htmlInput.substring(0, 200));
+            
+            try {
+                // データ種別を判定（テーブルを最優先）
+                const hasTableId = htmlInput.includes('tblReserveSearchResult');
+                const hasBookingList = htmlInput.includes('bookingSearchList');
+                const hasListRows = htmlInput.includes('class="list_0"') || htmlInput.includes('class="list_1"');
+                const isTablePage = hasTableId || hasBookingList || hasListRows;
+                
+                const isDetailPage = htmlInput.includes('staffBookingDetailBalloon') || htmlInput.includes('予約詳細');
+                const isCalendarPage = htmlInput.includes('bookingUserName') && htmlInput.includes('cellList') && !isTablePage;
+                
+                console.log('判定結果:', {
+                    hasTableId,
+                    hasBookingList, 
+                    hasListRows,
+                    isTablePage,
+                    isDetailPage,
+                    isCalendarPage
+                });
+                
+                let extractedData = [];
+                
+                if (isTablePage) {
+                    console.log('テーブルページとして処理開始');
+                    extractedData = extractTableData(htmlInput);
+                    displayTableResults(extractedData, '予約一覧テーブル');
+                } else if (isDetailPage) {
+                    console.log('詳細ページとして処理開始');
+                    extractedData = extractDetailPageData(htmlInput);
+                    displayDetailResults(extractedData, '詳細画面');
+                } else if (isCalendarPage) {
+                    console.log('カレンダーページとして処理開始');
+                    extractedData = extractCalendarData(htmlInput);
+                    displayCalendarResults(extractedData, 'カレンダー画面');
+                } else {
+                    console.log('対応していないページ形式です');
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h4>❌ 対応していないページ形式です</h4>
+                            <p>以下のいずれかのページのHTMLを貼り付けてください：</p>
+                            <ul>
+                                <li><strong>予約一覧テーブル画面</strong>（最も詳細な情報が取得可能）</li>
+                                <li><strong>予約カレンダー画面</strong>（複数の予約が表示される画面）</li>
+                                <li><strong>予約詳細画面</strong>（個別の予約をクリックした時の詳細画面）</li>
+                            </ul>
+                            <button class="copy-btn" onclick="showDebugInfo()" style="background: #ffc107;">🔍 デバッグ情報表示</button>
+                            <div id="debugInfo" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 12px;"></div>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('エラー:', error);
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h4>❌ エラーが発生しました</h4>
+                        <p>エラー内容: ${error.message}</p>
+                        <button class="copy-btn" onclick="showDebugInfo()" style="background: #ffc107;">🔍 デバッグ情報表示</button>
+                        <div id="debugInfo" style="display: none; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 4px; font-family: monospace; font-size: 12px;"></div>
+                    </div>
+                `;
+            }
+        }
+        
+        function extractTableData(htmlString) {
+            const tableData = [];
+            const rowPattern = /<tr class="list_\d+">(.*?)<\/tr>/gs;
+            const rowMatches = [...htmlString.matchAll(rowPattern)];
+            
+            console.log(`テーブル行を${rowMatches.length}件発見しました`);
+            
+            rowMatches.forEach((match, index) => {
+                const rowContent = match[1];
+                const data = {};
+                
+                try {
+                    // 予約番号とIDを抽出
+                    const bookingMatch = rowContent.match(/data-booking-id="([^"]+)"[^>]*>([^<]+)<\/a>/);
+                    if (bookingMatch) {
+                        data.bookingId = bookingMatch[1];
+                        data.bookingNo = bookingMatch[2].trim();
+                    }
+                    
+                    // 予約受付日時を抽出
+                    const reserveDateMatch = rowContent.match(/<td class="tblDateOfReserveTd"><span>([^<]+)<\/span><\/td>/);
+                    data.reserveDate = reserveDateMatch ? reserveDateMatch[1].trim() : '';
+                    
+                    // 実施・利用日時を抽出
+                    const useDateMatch = rowContent.match(/<td class="termCol"><span>([^<]+)<\/span><\/td>/);
+                    data.useDate = useDateMatch ? useDateMatch[1].trim() : '';
+                    
+                    // 予約方法を抽出
+                    const methodMatch = rowContent.match(/<p class="bookingRoot\d*">（([^）]+)）<\/p>/);
+                    data.bookingMethod = methodMatch ? methodMatch[1] : '';
+                    
+                    // すべてのtwoRowListを抽出
+                    const allTwoRowMatches = [...rowContent.matchAll(/<ul class="twoRowList"><li>([^<]*)<\/li><li>([^<]+)<\/li><\/ul>/g)];
+                    
+                    if (allTwoRowMatches.length >= 2) {
+                        // 1番目のtwoRowList: 名前・フリガナ
+                        const nameMatch = allTwoRowMatches[0];
+                        data.customerName = nameMatch[1].trim() || '-';
+                        data.customerKana = nameMatch[2].trim().replace(/&nbsp;/g, ' ');
+                        
+                        // 2番目のtwoRowList: メニュー・リソース
+                        const menuMatch = allTwoRowMatches[1];
+                        data.menu = menuMatch[1].trim();
+                        data.resource = menuMatch[2].trim();
+                    }
+                    
+                    // 合計料金を抽出（単独のtdの中身）
+                    const priceTdMatches = [...rowContent.matchAll(/<td>([^<]*)<\/td>/g)];
+                    if (priceTdMatches.length >= 2) {
+                        data.totalPrice = priceTdMatches[priceTdMatches.length - 2][1].trim() || '-';
+                    }
+                    
+                    // 予約ステータスを抽出
+                    const statusMatch = rowContent.match(/<span class="label[^"]*[^>]*>([^<]+)(?:<br>\s*([^<]+))?<\/span>/);
+                    if (statusMatch) {
+                        data.status = statusMatch[1].trim();
+                        if (statusMatch[2]) {
+                            data.status += ' (' + statusMatch[2].trim() + ')';
+                        }
+                    }
+                    
+                    // データが有効かチェック
+                    if (data.bookingNo && (data.customerKana || data.customerName)) {
+                        tableData.push(data);
+                        console.log(`行${index + 1}: ${data.customerKana} - ${data.bookingNo}`);
+                    }
+                    
+                } catch (error) {
+                    console.error(`行${index + 1}の処理中にエラー:`, error);
+                }
+            });
+            
+            console.log(`最終的に${tableData.length}件のデータを抽出しました`);
+            return tableData;
+        }
+        
+        function displayTableResults(data, source) {
+            const resultDiv = document.getElementById('result');
+            
+            if (data.length > 0) {
+                let resultHTML = `
+                    <div class="result">
+                        <h4>✅ 抽出成功！（${source}）</h4>
+                        <p><strong>予約件数:</strong> ${data.length}件</p>
+                        <button class="copy-btn" onclick="downloadTableCSV()">📊 完全版CSV保存</button>
+                        <button class="copy-btn" onclick="copyTableData()">📋 完全版データをコピー</button>
+                        
+                        <div style="overflow-x: auto; margin-top: 15px;">
+                            <table style="min-width: 1200px; font-size: 12px;">
+                                <thead>
+                                    <tr>
+                                        <th>No.</th>
+                                        <th>予約番号</th>
+                                        <th>お客様名</th>
+                                        <th>フリガナ</th>
+                                        <th>実施・利用日時</th>
+                                        <th>予約受付日時</th>
+                                        <th>メニュー</th>
+                                        <th>リソース</th>
+                                        <th>合計料金</th>
+                                        <th>予約ステータス</th>
+                                        <th>予約方法</th>
+                                        <th>予約ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+                
+                data.forEach((booking, index) => {
+                    resultHTML += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${booking.bookingNo || '-'}</td>
+                            <td>${booking.customerName || '-'}</td>
+                            <td>${booking.customerKana || '-'}</td>
+                            <td>${booking.useDate || '-'}</td>
+                            <td>${booking.reserveDate || '-'}</td>
+                            <td>${booking.menu || '-'}</td>
+                            <td>${booking.resource || '-'}</td>
+                            <td>${booking.totalPrice || '-'}</td>
+                            <td>${booking.status || '-'}</td>
+                            <td>${booking.bookingMethod || '-'}</td>
+                            <td>${booking.bookingId || '-'}</td>
+                        </tr>
+                    `;
+                });
+                
+                resultHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="result" style="margin-top: 20px; background: linear-gradient(45deg, #d1ecf1, #bee5eb);">
+                        <h4>🎉 完璧！すべての情報が取得できました</h4>
+                        <p>この予約一覧テーブルからは、必要な情報がすべて抽出できます！</p>
+                        <ul>
+                            <li>✅ <strong>正確な利用日時</strong>（分単位まで）</li>
+                            <li>✅ <strong>フリガナ</strong></li>
+                            <li>✅ <strong>予約番号</strong></li>
+                            <li>✅ <strong>合計料金</strong></li>
+                            <li>✅ <strong>予約受付日時</strong></li>
+                            <li>✅ <strong>詳細なステータス</strong></li>
+                        </ul>
+                    </div>
+                `;
+                
+                resultDiv.innerHTML = resultHTML;
+                window.extractedTableData = data;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h4>❌ テーブルデータが見つかりませんでした</h4>
+                        <p>予約一覧テーブルのHTMLを正しくコピーしているか確認してください。</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function downloadTableCSV() {
+            if (!window.extractedTableData || window.extractedTableData.length === 0) {
+                alert('❌ ダウンロードするテーブルデータがありません');
+                return;
+            }
+            
+            const today = new Date();
+            const dateString = today.getFullYear() + '-' + 
+                             String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                             String(today.getDate()).padStart(2, '0');
+            
+            const csvHeaders = [
+                'No.',
+                '予約番号',
+                'お客様名',
+                'フリガナ',
+                '実施・利用日時',
+                '予約受付日時',
+                'メニュー',
+                'リソース',
+                '合計料金（税込）',
+                '予約ステータス',
+                '予約方法',
+                '予約ID'
+            ].join(',');
+            
+            const csvRows = window.extractedTableData.map((booking, index) => [
+                index + 1,
+                `"${booking.bookingNo || ''}"`,
+                `"${booking.customerName || ''}"`,
+                `"${booking.customerKana || ''}"`,
+                `"${booking.useDate || ''}"`,
+                `"${booking.reserveDate || ''}"`,
+                `"${booking.menu || ''}"`,
+                `"${booking.resource || ''}"`,
+                `"${booking.totalPrice || ''}"`,
+                `"${booking.status || ''}"`,
+                `"${booking.bookingMethod || ''}"`,
+                `"${booking.bookingId || ''}"`
+            ].join(','));
+            
+            const csvContent = csvHeaders + '\n' + csvRows.join('\n');
+            
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `airreserve_完全版予約一覧_${dateString}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                alert('📊 完全版CSVファイルをダウンロードしました！\n\nすべての必要項目が含まれています。');
+            }
+        }
+        
+        function copyTableData() {
+            if (!window.extractedTableData || window.extractedTableData.length === 0) {
+                alert('❌ コピーするテーブルデータがありません');
+                return;
+            }
+            
+            const headers = ['No.', '予約番号', 'お客様名', 'フリガナ', '実施・利用日時', '予約受付日時', 'メニュー', 'リソース', '合計料金（税込）', '予約ステータス', '予約方法', '予約ID'];
+            const data = window.extractedTableData.map((booking, index) => [
+                index + 1,
+                booking.bookingNo || '',
+                booking.customerName || '',
+                booking.customerKana || '',
+                booking.useDate || '',
+                booking.reserveDate || '',
+                booking.menu || '',
+                booking.resource || '',
+                booking.totalPrice || '',
+                booking.status || '',
+                booking.bookingMethod || '',
+                booking.bookingId || ''
+            ]);
+            
+            const textData = [headers.join('\t'), ...data.map(row => row.join('\t'))].join('\n');
+            
+            navigator.clipboard.writeText(textData).then(() => {
+                alert('📋 完全版テーブルデータをクリップボードにコピーしました！\nExcelに貼り付けできます。');
+            }).catch(err => {
+                console.error('コピーに失敗:', err);
+                alert('❌ コピーに失敗しました');
+            });
+        }
+        
+        function clearInput() {
+            document.getElementById('htmlInput').value = '';
+            document.getElementById('result').innerHTML = '';
+        }
+        
+        window.onload = function() {
+            console.log('🎯 Airリザーブ予約者一覧抽出ツール（完全修正版）が読み込まれました');
+        };
+    </script>
+</body>
+</html>
