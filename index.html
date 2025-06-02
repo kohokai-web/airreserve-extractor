@@ -104,13 +104,18 @@
             <h3>1️⃣ HTMLソースを貼り付けてください</h3>
             <textarea id="htmlInput" placeholder="ここにAirリザーブの管理画面からコピーしたHTMLを貼り付けてください...
 
-例:
-<ul class='cellList is-data'>
-  <li class='cellListItem'>
-    <span class='bookingUserName'>(山田太郎)</span>
-    ...
-  </li>
-</ul>"></textarea>
+【推奨】予約一覧テーブル:
+<table class='tbl type-hAxisTtl' id='tblReserveSearchResult'>
+  <tbody id='bookingSearchList'>
+    <tr class='list_0'>
+      ...予約データ...
+    </tr>
+  </tbody>
+</table>
+
+【他の形式】
+カレンダー: <ul class='cellList is-data'>...
+詳細画面: <section class='staffBookingDetailBalloon'>..."></textarea>
             <button onclick="extractNames()">🔍 抽出開始</button>
             <button onclick="clearInput()">🗑️ クリア</button>
         </div>
